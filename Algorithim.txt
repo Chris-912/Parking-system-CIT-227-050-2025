@@ -1,0 +1,61 @@
+Algorithm for the Six Modules
+
+Module 1: Visual Display Module
+Step 1: START
+Step 2: Retrieve the total number of parking slots in the system.
+Step 3: Retrieve the count of available parking slots.
+Step 4: Display the available slots to the driver before entry[cite: 1].
+Step 5: STOP
+
+Module 2: Entry Management Module
+Step 1: START
+Step 2: Read the arriving vehicle's license plate.
+Step 3: If the count of available slots is 0, display "Parking Full" and go to Step 8.
+Step 4: Assign an available slot to the vehicle.
+Step 5: Record the vehicle on arrival along with the current entry time[cite: 1].
+Step 6: Update the database to map the license plate to the assigned slot.
+Step 7: Display "Proceed to Slot" and open the barrier.
+Step 8: STOP
+
+Module 3: Exit and Billing Module
+Step 1: START
+Step 2: Read the exiting vehicle's license plate.
+Step 3: Retrieve the stored entry time for that license plate.
+Step 4: Capture the current exit time.
+Step 5: Calculate the total time spent in the parking area[cite: 1].
+Step 6: If time is up to 30 minutes, set Amount to Pay = 0[cite: 1].
+Step 7: Else If time is up to 2 hours, set Amount to Pay = Kshs. 50[cite: 1].
+Step 8: Else If time is up to 4 hours, set Amount to Pay = Kshs. 100[cite: 1].
+Step 9: Else If time is up to 6 hours, set Amount to Pay = Kshs. 300[cite: 1].
+Step 10: Else, set Amount to Pay = Kshs. 500[cite: 1].
+Step 11: Display the Amount to Pay[cite: 1].
+Step 12: STOP
+
+Module 4: M-Pesa Payment Module
+Step 1: START
+Step 2: Receive the Amount to Pay and the driver's phone number.
+Step 3: If Amount to Pay is 0, go to Step 9.
+Step 4: Generate Daraja API credentials and STK Push payload.
+Step 5: Send STK Push prompt to phone number.
+Step 6: Wait for M-Pesa network callback.
+Step 7: If callback confirms payment, print "Payment Received".
+Step 8: If callback fails, print "Payment Failed" and go to Step 2.
+Step 9: Open the barrier to allow exit on the payment of the parking fees[cite: 1].
+Step 10: STOP
+
+Module 5: Database Management Module
+Step 1: START
+Step 2: On vehicle entry, insert a new record containing license plate, slot ID, and entry time.
+Step 3: On vehicle exit, locate the record matching the license plate.
+Step 4: Free the associated slot ID and increase the available slots count.
+Step 5: Move the record to the completed transactions log, adding the exit time and amount paid.
+Step 6: STOP
+
+Module 6: Management and Reporting Module
+Step 1: START
+Step 2: Input Target Date.
+Step 3: Initialize Total Revenue = 0 and Total Exits = 0.
+Step 4: For each record in the completed transactions log, check if the record's date matches Target Date.
+Step 5: If true, add the record's amount paid to Total Revenue, and increment Total Exits by 1.
+Step 6: Display Total Revenue and Total Exits.
+Step 7: STOP

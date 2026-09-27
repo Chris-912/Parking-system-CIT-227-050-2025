@@ -1,0 +1,21 @@
+Data Structures and Reasons for Their Use
+
+1. Sets (e.g., Available Slots Pool)
+- Description: A collection of unique elements used to track the IDs of all currently empty parking spaces.
+- Reason for use: Sets provide O(1) constant time complexity for adding a freed slot, removing an allocated slot, and counting remaining slots. This ensures the visual display of parking slots available before entry updates instantly and efficiently.
+
+2. Hash Maps / Dictionaries (e.g., Active Vehicles Map, Pending Payments)
+- Description: A data structure that stores information in key-value pairs. In this system, the vehicle's License Plate acts as the key, and its Entry Time and Slot ID act as the values.
+- Reason for use: Hash maps provide O(1) constant time complexity for data retrieval. When a vehicle reaches the exit, the system must automatically calculate total time spent in the parking and amount to pay. The hash map allows the system to instantly look up the specific vehicle's arrival time without iterating through a list of all parked cars.
+
+3. Arrays / Lists (e.g., Daily Transactions Ledger)
+- Description: An ordered, sequential collection of elements used to store records of completed parking sessions and payments.
+- Reason for use: Arrays allow for simple, ordered appending of new payment logs. They are easy to iterate through when the management module needs to filter records by date and sum up the daily revenue.
+
+4. Queues (e.g., Entry and Exit Waiting Lines)
+- Description: A First-In-First-Out (FIFO) data structure representing vehicles waiting at the physical barriers.
+- Reason for use: Ensures orderly and fair processing. The first vehicle to arrive at the entry or exit barrier is the first one processed, ensuring the barrier opens to allow exit on the payment of the parking fees in the correct, sequential order.
+
+5. Relational Database Tables (e.g., Parking Logs and Slots Tables)
+- Description: Structured rows and columns used in the Dynamic Database module.
+- Reason for use: Provides persistent, long-term storage. It ensures that the system reliably records vehicles on arrival and does not lose critical data (like entry timestamps or revenue logs) if the web-based system experiences a server restart or power failure.

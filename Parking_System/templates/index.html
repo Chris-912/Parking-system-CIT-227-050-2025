@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Parking System - MMU</title>
+    <style>
+        :root {
+            --bg: #f3f7fb;
+            --panel: #ffffff;
+            --panel-soft: #eef5ff;
+            --primary: #1d4ed8;
+            --primary-dark: #163ea8;
+            --success: #16a34a;
+            --warning: #f59e0b;
+            --text: #112033;
+            --muted: #5b6f88;
+            --border: #dfeaf6;
+            --shadow: 0 20px 45px rgba(17, 32, 51, 0.12);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(96, 165, 250, 0.22), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(52, 211, 153, 0.18), transparent 25%),
+                linear-gradient(135deg, #0f172a 0%, #111827 20%, #eaf2ff 20%, #eef8f4 100%);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .app-shell {
+            width: min(100%, 980px);
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.85);
+            border-radius: 30px;
+            box-shadow: 0 25px 70px rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(10px);
+            padding: 28px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 3vw, 2.6rem);
+            color: var(--text);
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #dbeafe, #dcfce7);
+            color: #123b7c;
+            border: 1px solid rgba(59, 130, 246, 0.22);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            box-shadow: 0 10px 18px rgba(59, 130, 246, 0.12);
+        }
+
+        .display-board {
+            font-size: clamp(1.3rem, 2vw, 2rem);
+            padding: 24px 28px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #d9f99d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-radius: 18px;
+            margin: 0 auto 24px;
+            width: 100%;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 15px 25px rgba(15, 23, 42, 0.22);
+        }
+
+        .display-board strong {
+            font-size: 2.2em;
+            color: #86efac;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .controls {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: 0 16px 32px rgba(31, 41, 55, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .controls:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 32px rgba(31, 41, 55, 0.12);
+        }
+
+        .slot-panel {
+            margin-top: 24px;
+            background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        }
+
+        .slot-panel h3 {
+            margin: 0 0 16px;
+            font-size: 1.2rem;
+        }
+
+        .vehicle-panel {
+            margin-top: 24px;
+            background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        }
+
+        .vehicle-panel h3 {
+            margin: 0 0 16px;
+            font-size: 1.2rem;
+        }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(60px, 1fr));
+            gap: 10px;
+        }
+
+        .vehicle-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .vehicle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #eff6ff, #f8fafc);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .vehicle-item strong {
+            color: #0f172a;
+        }
+
+        .vehicle-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .slot {
+            min-height: 64px;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.82rem;
+            border: 1px solid transparent;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .slot.available {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            color: #166534;
+            border-color: rgba(34, 197, 94, 0.25);
+        }
+
+        .slot.occupied {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .slot small {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .controls h3 {
+            margin: 0 0 14px;
+            font-size: 1.15rem;
+            color: var(--text);
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #f8fbff;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:focus {
+            border-color: rgba(29, 78, 216, 0.6);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 16px rgba(29, 78, 216, 0.18);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.04);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+
+        .entry-btn { background: linear-gradient(135deg, var(--primary), #2563eb); }
+        .fee-btn { background: linear-gradient(135deg, var(--warning), #f97316); }
+        .pay-btn { background: linear-gradient(135deg, var(--success), #15803d); }
+        .revenue-btn { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 22px 0;
+        }
+
+        #payment-section {
+            margin-top: 16px;
+            border-top: 1px dashed var(--border);
+            padding-top: 14px;
+        }
+
+        .phone-entry {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .phone-entry input {
+            flex: 1 1 auto;
+            width: auto;
+            min-width: 0;
+        }
+
+        .phone-entry button {
+            flex: 0 0 auto;
+            width: auto;
+            margin-top: 0;
+        }
+
+        .sandbox-note {
+            margin: 10px 0 0;
+            color: #8a4b08;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .payment-feedback {
+            min-height: 20px;
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .payment-feedback[data-tone="error"] { color: #b91c1c; }
+
+        .slip-panel {
+            margin-top: 24px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .slip-panel h2 {
+            margin: 0 0 14px;
+            font-size: 1.1rem;
+        }
+
+        .slip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .slip-row span { color: var(--muted); }
+        .slip-row strong { text-align: right; overflow-wrap: anywhere; }
+
+        @media print {
+            @page { size: 80mm auto; margin: 5mm; }
+            body * { visibility: hidden !important; }
+            #print-slip, #print-slip * { visibility: visible !important; }
+            #print-slip {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 70mm;
+                margin: 0;
+                padding: 0;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                color: #000;
+                background: #fff;
+            }
+            #slip-action { display: none !important; }
+        }
+
+        #system-message {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a5b00;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            margin-top: 14px;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #revenue-display {
+            margin-top: 14px;
+            min-height: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        @media (max-width: 640px) {
+            .app-shell { padding: 18px; }
+            .topbar { flex-direction: column; align-items: flex-start; }
+            .display-board { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <div class="topbar">
+            <div class="badge">Parking Manager</div>
+        </div>
+
+        <div class="display-board">
+            <span>Available Slots</span>
+            <strong>{{ available }}</strong>
+            <span>/ {{ total }}</span>
+        </div>
+
+        <div class="cards">
+            <div class="controls">
+                <h3>1. Vehicle Entry</h3>
+                <label for="entry-plate">License Plate</label>
+                <input type="text" id="entry-plate" placeholder="e.g. KCA 123A">
+                <button class="entry-btn" onclick="recordEntry()">Simulate Entry & Open Barrier</button>
+            </div>
+
+            <div class="controls">
+                <h3>2. Exit & Billing</h3>
+                <label for="exit-plate">License Plate</label>
+                <input type="text" id="exit-plate" placeholder="Enter plate number">
+                <button class="fee-btn" onclick="calculateFee()">Calculate Fee</button>
+
+                <div id="payment-section" style="display: none;">
+                    <label for="phone">M-Pesa Phone</label>
+                    <div class="phone-entry">
+                        <input type="tel" id="phone" placeholder="0712345678" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="0[17][0-9]{8}">
+                        <button id="send-payment" type="button" class="pay-btn" aria-label="Send the M-Pesa prompt to this number" onclick="payWithMpesa()">Enter</button>
+                    </div>
+                    <p id="payment-feedback" class="payment-feedback" role="status" aria-live="polite"></p>
+                    {% if payment_environment == 'sandbox' %}
+                    <p class="sandbox-note" role="note">Sandbox is active: real phones will not receive prompts. Use simulator number 0708374149.</p>
+                    {% endif %}
+                    <button id="check-payment" type="button" class="pay-btn" style="display: none;" onclick="checkPaymentStatus()">Check Payment Status</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h3>3. Management Module</h3>
+                <button class="revenue-btn" onclick="checkRevenue()">View Daily Revenue</button>
+                <p id="revenue-display"></p>
+            </div>
+        </div>
+
+        <div class="slot-panel">
+            <h3>Parking Slots</h3>
+            <div id="slot-grid" class="slot-grid"></div>
+        </div>
+
+        <div class="vehicle-panel">
+            <h3>Vehicles Currently Parked</h3>
+            <div id="vehicle-list" class="vehicle-list"></div>
+        </div>
+
+        <section id="print-slip" class="slip-panel" hidden aria-live="polite">
+            <h2 id="slip-title"></h2>
+            <div id="slip-details"></div>
+            <button id="slip-action" type="button" class="entry-btn" hidden></button>
+        </section>
+
+        <p id="system-message"></p>
+    </div>
+
+    <script>
+        let pendingExit = null;
+        let paymentInProgress = false;
+
+        async function postData(url, data) {
+            const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            return res.json();
+        }
+
+        function formatElapsedTime(entryTime) {
+            const entry = new Date(entryTime.replace(' ', 'T'));
+            const now = new Date();
+            const diffMinutes = Math.max(0, Math.floor((now - entry) / 60000));
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            return `${hours}h ${minutes}m`;
+        }
+
+        async function loadSlots() {
+            const res = await fetch('/api/slots');
+            const data = await res.json();
+            const grid = document.getElementById('slot-grid');
+            grid.innerHTML = '';
+
+            data.slots.forEach(slot => {
+                const tile = document.createElement('div');
+                const status = slot.status === 'Available' ? 'available' : 'occupied';
+                tile.className = `slot ${status}`;
+                tile.innerHTML = `<span>${slot.label || `G${slot.id}`}</span><small>${slot.status}</small>`;
+                grid.appendChild(tile);
+            });
+        }
+
+        async function loadActiveVehicles() {
+            const res = await fetch('/api/active-vehicles');
+            const data = await res.json();
+            const list = document.getElementById('vehicle-list');
+            list.innerHTML = '';
+
+            if (!data.vehicles || data.vehicles.length === 0) {
+                list.innerHTML = '<div class="vehicle-item"><strong>No vehicles currently inside</strong></div>';
+                return;
+            }
+
+            data.vehicles.forEach(vehicle => {
+                const row = document.createElement('div');
+                row.className = 'vehicle-item';
+                row.innerHTML = `
+                    <strong>${vehicle.plate}</strong>
+                    <div class="vehicle-meta">
+                        <span>${vehicle.slot}</span>
+                        <span>${formatElapsedTime(vehicle.entryTime)} in</span>
+                        <span>${vehicle.status === 'Pending_Payment' ? 'Awaiting payment' : 'Parked'}</span>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function showPrintSlip(title, rows, actionLabel, action) {
+            const panel = document.getElementById('print-slip');
+            document.getElementById('slip-title').innerText = title;
+            const details = document.getElementById('slip-details');
+            details.replaceChildren();
+            rows.forEach(([label, value]) => {
+                const row = document.createElement('div');
+                row.className = 'slip-row';
+                const name = document.createElement('span');
+                name.innerText = label;
+                const content = document.createElement('strong');
+                content.innerText = value == null ? '' : String(value);
+                row.append(name, content);
+                details.appendChild(row);
+            });
+
+            const actionButton = document.getElementById('slip-action');
+            actionButton.innerText = actionLabel || '';
+            actionButton.hidden = !actionLabel;
+            actionButton.onclick = action || null;
+            panel.hidden = false;
+        }
+
+        async function recordEntry() {
+            const input = document.getElementById('entry-plate');
+            const plate = input.value.trim().toUpperCase();
+            if (!plate) {
+                document.getElementById('system-message').innerText = 'Please enter a license plate first.';
+                return;
+            }
+
+            try {
+                const data = await postData('/api/entry', { plate });
+                document.getElementById('system-message').innerText = data.error || data.message;
+                if (data.error) return;
+
+                const ticket = data.ticket;
+                showPrintSlip('PARKING ENTRY TICKET', [
+                    ['Ticket', ticket.number],
+                    ['Vehicle plate', ticket.plate],
+                    ['Assigned bay', ticket.slot],
+                    ['Entry time', ticket.entryTime],
+                ], 'Print Ticket Again', () => window.print());
+                input.value = '';
+                loadSlots();
+                loadActiveVehicles();
+                setTimeout(() => window.print(), 250);
+            } catch (error) {
+                document.getElementById('system-message').innerText = 'Could not record vehicle entry. Check the connection and try again.';
+            }
+        }
+
+        async function calculateFee() {
+            const plate = document.getElementById('exit-plate').value.trim();
+            if (!plate) {
+                document.getElementById('system-message').innerText = 'Please enter a license plate first.';
+                return;
+            }
+
+            if (pendingExit && pendingExit.plate === plate) {
+                document.getElementById('system-message').innerText = `Parking fee due: Kshs ${pendingExit.fee}. Time spent: ${pendingExit.time} mins.`;
+                return;
+            }
+
+            try {
+                const data = await postData('/api/exit', { plate });
+                if (data.error) {
+                    document.getElementById('system-message').innerText = data.error;
+                    document.getElementById('payment-section').style.display = 'none';
+                    return;
+                }
+
+                pendingExit = { plate: data.plate || plate, fee: data.fee, time: data.time };
+                document.getElementById('payment-section').style.display = 'block';
+                document.getElementById('system-message').innerText = `Parking fee due: Kshs ${data.fee}. Time spent: ${data.time} mins.`;
+
+                if (data.paymentStatus === 'Paid') {
+                    document.getElementById('system-message').innerText += ' Payment confirmed. Preparing receipt.';
+                    await monitorPayment(pendingExit.plate);
+                    return;
+                }
+
+                if (data.paymentStatus === 'Requested' || data.paymentStatus === 'Initiating') {
+                    document.getElementById('system-message').innerText += ' M-Pesa prompt already sent; waiting for confirmation.';
+                    await monitorPayment(pendingExit.plate);
+                    return;
+                }
+
+                if (data.paymentStatus === 'Failed') {
+                    document.getElementById('system-message').innerText += ' Payment was not completed. Enter your number and tap Enter to try again.';
+                    document.getElementById('send-payment').style.display = 'block';
+                    document.getElementById('phone').focus();
+                    return;
+                }
+
+                const phoneInput = document.getElementById('phone');
+                if (data.fee <= 0) {
+                    document.getElementById('system-message').innerText += ' No payment is required; opening the barrier.';
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    payWithMpesa();
+                    return;
+                }
+
+                if (!phoneInput.value.trim()) {
+                    phoneInput.focus();
+                    document.getElementById('system-message').innerText += ' Enter your M-Pesa number, then tap Enter to send the prompt.';
+                } else {
+                    document.getElementById('system-message').innerText += ' Tap Enter to send the prompt.';
+                }
+                document.getElementById('send-payment').style.display = 'block';
+            } catch (error) {
+                document.getElementById('system-message').innerText = 'Could not calculate the fee. Check the connection and try again.';
+            }
+        }
+
+        function isValidPhoneNumber(value) {
+            return /^0[17]\d{8}$/.test(value.trim());
+        }
+
+        function setEnterButtonBusy(busy, label) {
+            const button = document.getElementById('send-payment');
+            button.disabled = busy;
+            button.innerText = busy ? label : 'Enter';
+        }
+
+        function setPaymentFeedback(message, tone = 'info') {
+            const feedback = document.getElementById('payment-feedback');
+            feedback.innerText = message || '';
+            feedback.dataset.tone = tone;
+        }
+
+        async function payWithMpesa() {
+            if (!pendingExit || paymentInProgress) return;
+
+            const plate = pendingExit.plate;
+            const phone = document.getElementById('phone').value.trim();
+
+            if (pendingExit.fee > 0 && !isValidPhoneNumber(phone)) {
+                const message = 'Enter a 10-digit Kenyan M-Pesa number, such as 0712345678.';
+                document.getElementById('system-message').innerText = message;
+                setPaymentFeedback(message, 'error');
+                document.getElementById('phone').focus();
+                return;
+            }
+
+            paymentInProgress = true;
+            setEnterButtonBusy(true, pendingExit.fee > 0 ? 'Sending...' : 'Opening...');
+            document.getElementById('check-payment').style.display = 'none';
+            const sendingMessage = pendingExit.fee > 0 ? 'Sending M-Pesa payment prompt...' : 'Completing free exit...';
+            document.getElementById('system-message').innerText = sendingMessage;
+            setPaymentFeedback(sendingMessage);
+            try {
+                const data = await postData('/api/pay/mpesa', { plate, phone });
+                if (data.error) {
+                    document.getElementById('system-message').innerText = data.error;
+                    setPaymentFeedback(data.error, 'error');
+                    return;
+                }
+
+                document.getElementById('system-message').innerText = data.message;
+                setPaymentFeedback(data.message);
+                await monitorPayment(plate);
+            } catch (error) {
+                const message = 'Could not contact the payment service. Check the connection and try again.';
+                document.getElementById('system-message').innerText = message;
+                setPaymentFeedback(message, 'error');
+            } finally {
+                paymentInProgress = false;
+                setEnterButtonBusy(false);
+            }
+        }
+
+        async function monitorPayment(plate) {
+            for (let attempt = 0; attempt < 30; attempt++) {
+                const response = await fetch(`/api/pay/mpesa/status?plate=${encodeURIComponent(plate)}`);
+                const data = await response.json();
+                if (data.status === 'Paid') {
+                    document.getElementById('system-message').innerText = data.message;
+                    setPaymentFeedback(data.message);
+                    document.getElementById('check-payment').style.display = 'none';
+                    if (data.receipt) {
+                        showPrintSlip('M-PESA PAYMENT RECEIPT', [
+                            ['Receipt number', data.receipt.number],
+                            ['Vehicle plate', data.receipt.plate],
+                            ['Parking bay', data.receipt.slot],
+                            ['Time parked', `${data.receipt.minutes} minutes`],
+                            ['Amount paid', `Kshs ${data.receipt.amount}`],
+                            ['M-Pesa number', data.receipt.phone],
+                            ['Payment time', data.receipt.exitTime],
+                        ], 'Print Receipt & Open Barrier', printReceiptAndOpenBarrier);
+                    }
+                    return;
+                }
+                if (data.status === 'Failed' || data.error) {
+                    const message = `${data.message || data.error} Enter your number and tap Enter to try again.`;
+                    document.getElementById('system-message').innerText = message;
+                    setPaymentFeedback(message, 'error');
+                    return;
+                }
+                const message = data.message || 'Waiting for M-Pesa confirmation. Check your phone.';
+                document.getElementById('system-message').innerText = message;
+                setPaymentFeedback(message);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+
+            document.getElementById('system-message').innerText = 'Still waiting for confirmation. Check your phone, then check the payment status again.';
+            document.getElementById('check-payment').style.display = 'block';
+        }
+
+        async function printReceiptAndOpenBarrier() {
+            if (!pendingExit || paymentInProgress) return;
+
+            const actionButton = document.getElementById('slip-action');
+            actionButton.disabled = true;
+            paymentInProgress = true;
+            try {
+                window.print();
+                const data = await postData('/api/exit/complete', { plate: pendingExit.plate });
+                if (data.error) {
+                    document.getElementById('system-message').innerText = `Receipt ready, but the barrier could not open: ${data.error}`;
+                    return;
+                }
+
+                document.getElementById('system-message').innerText = data.message;
+                pendingExit = null;
+                actionButton.innerText = 'Print Receipt Again';
+                actionButton.onclick = () => window.print();
+                loadSlots();
+                loadActiveVehicles();
+            } catch (error) {
+                document.getElementById('system-message').innerText = 'Could not complete the exit. The receipt is saved; check the connection and retry.';
+            } finally {
+                actionButton.disabled = false;
+                paymentInProgress = false;
+            }
+        }
+
+        async function checkPaymentStatus() {
+            if (!pendingExit || paymentInProgress) return;
+            paymentInProgress = true;
+            document.getElementById('check-payment').style.display = 'none';
+            try {
+                await monitorPayment(pendingExit.plate);
+            } catch (error) {
+                document.getElementById('system-message').innerText = 'Could not check payment status. Try again.';
+                document.getElementById('check-payment').style.display = 'block';
+            } finally {
+                paymentInProgress = false;
+            }
+        }
+
+        async function checkRevenue() {
+            const res = await fetch('/api/revenue');
+            const data = await res.json();
+            document.getElementById('revenue-display').innerText = `Total Revenue (${data.date}): Kshs ${data.revenue} from ${data.exits} exits.`;
+        }
+
+        const exitPlate = document.getElementById('exit-plate');
+        exitPlate.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                calculateFee();
+            }
+        });
+
+        const phoneInput = document.getElementById('phone');
+        phoneInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                payWithMpesa();
+            }
+        });
+
+        loadSlots();
+        loadActiveVehicles();
+        setInterval(loadActiveVehicles, 15000);
+    </script>
+</body>
+</html>
